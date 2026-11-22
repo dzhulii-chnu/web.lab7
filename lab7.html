@@ -1,0 +1,157 @@
+<!doctype html>
+<html lang="uk">
+<head>
+  <meta charset="utf-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1">
+  <title>Лабораторна робота №7 — JavaScript</title>
+  <style>
+    body { font-family: Arial, sans-serif; max-width: 900px; margin: 20px auto; padding: 0 12px; }
+    section { border: 1px solid #999; border-radius: 6px; padding: 10px 14px; margin-bottom: 18px; }
+    textarea { display: block; width: 100%; box-sizing: border-box; margin-top: 8px; }
+    #log { height: 140px; overflow-y: auto; background: #f4f4f4; border: 1px solid #bbb; padding: 4px; font: 12px monospace; }
+    #samples > *, svg { cursor: pointer; }
+    svg { border: 1px solid #ccc; margin-right: 8px; }
+    #n { width: 65px; }
+  </style>
+</head>
+<body onload="log('load — сторінку завантажено')"
+      onresize="log('resize — розмір вікна ' + innerWidth + ' × ' + innerHeight)"
+      onfocus="log('focus — вікно отримало фокус')"
+      onblur="log('blur — вікно втратило фокус')">
+  <h1>Лабораторна робота №7</h1>
+  <h2>Журнал подій (завдання 1 і 2)</h2>
+  <div id="log" role="log" aria-label="Журнал подій"></div>
+  <p>Змініть розмір вікна або перейдіть до іншої вкладки й поверніться.</p>
+
+  <section>
+    <h3>Завдання 2. Події для тегів</h3>
+    <div id="samples">
+      <h2>Заголовок H2</h2>
+      <h3>Заголовок H3</h3>
+      <b>Жирний текст B</b> &nbsp; <i>Курсив I</i>
+    </div>
+    <p>Клацніть, клацніть двічі, наведіть або відведіть курсор.</p>
+  </section>
+
+  <section>
+    <h3>Завдання 3.5. Усі властивості об’єкта document</h3>
+    <form id="docForm">
+      <button type="submit">Run Task</button>
+      <textarea id="docOut" rows="8" aria-label="Властивості document" readonly></textarea>
+    </form>
+  </section>
+
+  <section>
+    <h3>Завдання 4. Події миші для малюнків</h3>
+    <svg width="120" height="120" viewBox="0 0 120 120" role="img" aria-label="Коло"><circle cx="60" cy="60" r="45" fill="tomato"/></svg>
+    <svg width="120" height="120" viewBox="0 0 120 120" role="img" aria-label="Квадрат"><rect x="15" y="15" width="90" height="90" fill="steelblue"/></svg>
+    <svg width="120" height="120" viewBox="0 0 120 120" role="img" aria-label="Трикутник"><polygon points="60,10 110,110 10,110" fill="seagreen"/></svg>
+    <div id="mouseInfo" role="status">Наведіть курсор на малюнок або клацніть його.</div>
+  </section>
+
+  <section>
+    <h3>Завдання 5.1. Підрахунок слів</h3>
+    <form id="wordForm">
+      <label for="txt">Вхідний текст</label>
+      <textarea id="txt" rows="3">П’ять учнів вивчають JavaScript. Це цікава лабораторна робота!</textarea>
+      <p><button type="submit">Пошук інформації</button></p>
+      <textarea id="wordOut" rows="2" aria-label="Кількість слів" readonly></textarea>
+    </form>
+  </section>
+
+  <section>
+    <h3>Завдання 6.5. Масив B без нульових елементів</h3>
+    <form id="arrayForm">
+      <label for="n">N (від 1 до 1000)</label>
+      <input id="n" type="number" value="10" min="1" max="1000" required>
+      <button type="submit">Array Task</button>
+      <textarea id="arrOut" rows="4" aria-label="Масиви A та B" readonly></textarea>
+    </form>
+  </section>
+
+  <script>
+    'use strict';
+
+    function log(message) {
+      const journal = document.querySelector('#log');
+      const line = document.createElement('div');
+      line.textContent = message;
+      journal.append(line);
+      journal.scrollTop = journal.scrollHeight;
+    }
+
+    const textEvents = {
+      click: ['color', 'red'],
+      dblclick: ['color', 'blue'],
+      mouseover: ['textDecoration', 'underline'],
+      mouseout: ['textDecoration', '']
+    };
+
+    for (const element of document.querySelectorAll('#samples > *')) {
+      for (const [type, [property, value]] of Object.entries(textEvents)) {
+        element.addEventListener(type, () => {
+          element.style[property] = value;
+          log(type + ' — ' + element.tagName + ' (' + element.textContent + ')');
+        });
+      }
+    }
+
+    document.querySelector('#docForm').addEventListener('submit', event => {
+      event.preventDefault();
+      const keys = new Set();
+      for (let object = document; object !== null; object = Object.getPrototypeOf(object)) {
+        for (const key of Reflect.ownKeys(object)) {
+          keys.add(key);
+        }
+      }
+      const lines = [...keys].map(key => {
+        let description;
+        try {
+          const value = document[key];
+          description = typeof value === 'function' ? '[функція]' : String(value);
+        } catch (error) {
+          description = '[недоступно: ' + error.name + ']';
+        }
+        return String(key) + ' = ' + description;
+      });
+      document.querySelector('#docOut').value = ['Кількість: ' + keys.size, ...lines].join('\n');
+    });
+
+    const mouseInfo = document.querySelector('#mouseInfo');
+    for (const picture of document.querySelectorAll('svg')) {
+      const name = picture.getAttribute('aria-label');
+      picture.addEventListener('mouseenter', () => {
+        picture.style.backgroundColor = '#eee';
+        mouseInfo.textContent = name + ' — курсор наведено.';
+      });
+      picture.addEventListener('mouseleave', () => {
+        picture.style.backgroundColor = '';
+        mouseInfo.textContent = name + ' — курсор відведено.';
+      });
+      picture.addEventListener('click', () => {
+        const selected = !picture.style.outline;
+        picture.style.outline = selected ? '2px solid #333' : '';
+        mouseInfo.textContent = name + (selected ? ' — виділено.' : ' — виділення знято.');
+      });
+    }
+
+    document.querySelector('#wordForm').addEventListener('submit', event => {
+      event.preventDefault();
+      const text = document.querySelector('#txt').value;
+      // Апостроф або дефіс між літерами належить до того самого слова.
+      const wordPattern = /\p{L}[\p{L}\p{M}]*(?:['’ʼ\-‐‑]\p{L}[\p{L}\p{M}]*)*/gu;
+      const words = text.match(wordPattern) ?? [];
+      document.querySelector('#wordOut').value = 'Кількість слів: ' + words.length;
+    });
+
+    document.querySelector('#arrayForm').addEventListener('submit', event => {
+      event.preventDefault();
+      const size = document.querySelector('#n').valueAsNumber;
+      const arrayA = Array.from({ length: size }, () => Math.floor(Math.random() * 7) - 3);
+      const arrayB = arrayA.filter(value => value !== 0);
+      document.querySelector('#arrOut').value =
+        'A = [' + arrayA.join(', ') + ']\nB = [' + arrayB.join(', ') + ']';
+    });
+  </script>
+</body>
+</html>
